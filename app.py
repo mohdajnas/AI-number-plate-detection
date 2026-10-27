@@ -10,6 +10,9 @@ from flask import Flask, render_template, request
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 app = Flask(__name__)
@@ -62,25 +65,34 @@ def allowed_file(filename):
         and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
     )
 
-
 def read_plate(crop):
-    """Improve the crop and recognize the text."""
     if crop.size == 0:
         return ""
 
+    import cv2
+    import re
+
+    # Convert to grayscale
     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-    # Enlarge small plates for better OCR.
+    # Remove some border noise
+    h, w = gray.shape
+    gray = gray[int(h * 0.12):int(h * 0.90),
+                int(w * 0.03):int(w * 0.97)]
+
+    # Enlarge the plate
     gray = cv2.resize(
-        gray,
-        None,
-        fx=2,
-        fy=2,
+        gray, None, fx=3, fy=3,
         interpolation=cv2.INTER_CUBIC
     )
 
-    gray = cv2.bilateralFilter(gray, 9, 75, 75)
+    # Improve contrast
+    gray = cv2.createCLAHE(
+        clipLimit=2.0,
+        tileGridSize=(8, 8)
+    ).apply(gray)
 
+    # OCR with a restricted character set
     results = reader.readtext(
         gray,
         detail=0,
@@ -91,7 +103,48 @@ def read_plate(crop):
     text = "".join(results).upper()
     text = re.sub(r"[^A-Z0-9]", "", text)
 
-    return text
+    # Remove common OCR errors around Indian plate formats
+    if text.startswith("IND"):
+        text = text[3:]
+
+    # Handle extra leading characters
+    match = re.search(
+        r"([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4})",
+        text
+    )
+
+    return match.group(1) if match else text
+
+
+# def read_plate(crop):
+#     """Improve the crop and recognize the text."""
+#     if crop.size == 0:
+#         return ""
+
+#     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+
+#     # Enlarge small plates for better OCR.
+#     gray = cv2.resize(
+#         gray,
+#         None,
+#         fx=2,
+#         fy=2,
+#         interpolation=cv2.INTER_CUBIC
+#     )
+
+#     gray = cv2.bilateralFilter(gray, 9, 75, 75)
+
+#     results = reader.readtext(
+#         gray,
+#         detail=0,
+#         paragraph=False,
+#         allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+#     )
+
+#     text = "".join(results).upper()
+#     text = re.sub(r"[^A-Z0-9]", "", text)
+
+#     return text
 
 
 def save_record(plate, image_path, plate_path, confidence):
@@ -273,4 +326,4 @@ def detected_file(filename):
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    app.run(debug=False, use_reloader=False)
