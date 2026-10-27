@@ -5,9 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Number Plate Detection</title>
+    <title>Number Plate Detection System</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             background: #f1f5f9;
@@ -18,12 +22,16 @@
         header {
             background: #0f172a;
             color: white;
-            padding: 24px;
+            padding: 28px 20px;
             text-align: center;
         }
 
+        header h1 {
+            margin: 0 0 10px;
+        }
+
         main {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 30px auto;
             padding: 20px;
         }
@@ -37,7 +45,8 @@
         }
 
         input[type="file"] {
-            margin: 18px 0;
+            display: block;
+            margin: 20px 0;
             width: 100%;
         }
 
@@ -45,45 +54,167 @@
             background: #2563eb;
             color: white;
             border: none;
-            padding: 12px 22px;
+            padding: 13px 22px;
             border-radius: 6px;
             cursor: pointer;
+            font-size: 15px;
         }
 
         button:hover {
             background: #1d4ed8;
         }
 
-        img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
+        button:disabled {
+            background: #94a3b8;
+            cursor: wait;
         }
 
-        .plate {
-            font-size: 22px;
+        .result-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .plate-number {
+            display: inline-block;
+            background: #f8fafc;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            padding: 12px 18px;
+            font-size: 25px;
             font-weight: bold;
+            letter-spacing: 2px;
             color: #047857;
+            overflow-wrap: anywhere;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit,
+                    minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .result-item .label {
+            display: block;
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .result-item .value {
+            font-size: 17px;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        .color-dot {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 1px solid #94a3b8;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
         }
 
         .error {
             color: #dc2626;
+            background: #fef2f2;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .notice {
+            color: #92400e;
+            background: #fffbeb;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 600px;
         }
 
         th,
         td {
-            padding: 12px;
+            padding: 13px;
             border-bottom: 1px solid #e2e8f0;
             text-align: left;
         }
 
-        .table-wrap {
-            overflow-x: auto;
+        th {
+            background: #f8fafc;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .color-dot {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 1px solid #94a3b8;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .color-white {
+            background-color: white;
+        }
+
+        .color-yellow {
+            background-color: #facc15;
+        }
+
+        .color-green {
+            background-color: #16a34a;
+        }
+
+        .color-black {
+            background-color: black;
+        }
+
+        .color-unknown {
+            background-color: #cbd5e1;
+        }
+
+
+        @media (max-width: 600px) {
+            main {
+                padding: 12px;
+                margin: 15px auto;
+            }
+
+            .card {
+                padding: 17px;
+            }
+
+            .plate-number {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -92,25 +223,31 @@
 
     <header>
         <h1>Number Plate Detection System</h1>
-        <p>Automatic Vehicle Number Plate Recognition</p>
+        <p>Automatic Number Plate Recognition and Color Analysis</p>
     </header>
 
     <main>
 
+        <!-- Image Upload -->
         <section class="card">
             <h2>Upload Vehicle Image</h2>
 
-            <form method="POST" enctype="multipart/form-data">
+            <p>
+                Upload a clear vehicle image to detect its number
+                plate and estimate its color and category.
+            </p>
 
-                <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <input type="file" name="image" id="imageInput" accept=".jpg,.jpeg,.png,.webp" required>
 
-                <br>
-
-                <button type="submit">
+                <button type="submit" id="detectButton">
                     Detect Number Plate
                 </button>
-
             </form>
+
+            <p id="loadingMessage" hidden>
+                Processing image. Please wait...
+            </p>
 
             {% if error %}
             <p class="error">{{ error }}</p>
@@ -118,53 +255,131 @@
         </section>
 
 
+        <!-- Detection Results -->
         {% if annotated_image %}
         <section class="card">
+
             <h2>Detection Result</h2>
 
-            <img src="{{ url_for(
+            <img class="result-image" src="{{ url_for(
                 'detected_file',
                 filename=annotated_image
-            ) }}" alt="Vehicle with detected number plates">
-
-            <h3>Recognized Number Plates</h3>
+            ) }}" alt="Vehicle image with detected number plate">
 
             {% if detections %}
+
             {% for item in detections %}
-            <p class="plate">
-                {{ item.plate if item.plate
-                else "Text not recognized" }}
+
+            <div style="margin-top: 28px;">
+
+                <h3>Recognized Number Plate</h3>
+
+                <div class="plate-number">
+                    {{ item.plate if item.plate else
+                    "Text not recognized" }}
+                </div>
+
+                <div class="result-grid">
+
+
+                    <!-- Background Color -->
+                    <div class="result-item">
+                        <span class="label">Plate Background Color</span>
+
+                        <span class="value">
+                            <span class="color-dot color-{{ item.background_color | lower
+                                if item.background_color in ['White', 'Yellow', 'Green', 'Black']
+                                else 'unknown' }}"></span>
+
+                            {{ item.background_color }}
+                        </span>
+                    </div>
+
+
+
+
+                    <!-- Text Color -->
+                    <div class="result-item">
+                        <span class="label">Plate Text Color</span>
+
+                        <span class="value">
+                            <span class="color-dot color-{{ item.text_color | lower
+                                if item.text_color in ['White', 'Yellow', 'Green', 'Black']
+                                else 'unknown' }}"></span>
+
+                            {{ item.text_color }}
+                        </span>
+                    </div>
+
+
+
+                    <!-- Plate Category -->
+                    <div class="result-item">
+                        <span class="label">
+                            Estimated Plate Category
+                        </span>
+
+                        <span class="value">
+                            {{ item.plate_type }}
+                        </span>
+                    </div>
+
+
+                    <!-- Detection Confidence -->
+                    <div class="result-item">
+                        <span class="label">
+                            Detection Confidence
+                        </span>
+
+                        <span class="value">
+                            {{ "%.1f"|format(
+                            item.confidence * 100
+                            ) }}%
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+            {% else %}
+
+            <p>No number plates were detected.</p>
+
+            {% endif %}
+
+            <p class="notice">
+                Plate colors and categories are estimates based on
+                image analysis. They do not establish the vehicle's
+                legal registration or ownership category.
             </p>
 
-            <p>
-                Detection confidence:
-                {{ "%.1f"|format(
-                item.confidence * 100
-                ) }}%
-            </p>
-            {% endfor %}
-            {% else %}
-            <p>No number plates detected.</p>
-            {% endif %}
         </section>
         {% endif %}
 
 
+        <!-- Detection History -->
         <section class="card">
+
             <h2>Recent Detection History</h2>
 
             <div class="table-wrap">
+
                 <table>
                     <thead>
                         <tr>
                             <th>Plate Number</th>
-                            <th>Confidence</th>
-                            <th>Detection Time (UTC)</th>
+                            <th>Detection Confidence</th>
+                            <th>Date and Time (UTC)</th>
                         </tr>
                     </thead>
 
                     <tbody>
+
                         {% for row in history %}
+
                         <tr>
                             <td>{{ row.plate_number }}</td>
 
@@ -178,18 +393,47 @@
                         </tr>
 
                         {% else %}
+
                         <tr>
                             <td colspan="3">
                                 No detection records yet.
                             </td>
                         </tr>
+
                         {% endfor %}
+
                     </tbody>
                 </table>
+
             </div>
+
         </section>
 
     </main>
+
+    <footer>
+        Number Plate Detection Platform
+    </footer>
+
+    <script>
+        const form = document.getElementById("uploadForm");
+        const button = document.getElementById("detectButton");
+        const loading = document.getElementById("loadingMessage");
+
+        form.addEventListener("submit", function (event) {
+            const input = document.getElementById("imageInput");
+
+            if (!input.files || input.files.length === 0) {
+                event.preventDefault();
+                alert("Please select a vehicle image.");
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = "Detecting...";
+            loading.hidden = false;
+        });
+    </script>
 
 </body>
 

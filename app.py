@@ -5,6 +5,8 @@ import uuid
 from datetime import datetime, timezone
 
 import cv2
+
+import numpy as np
 import easyocr
 from flask import Flask, render_template, request
 from huggingface_hub import hf_hub_download
@@ -147,6 +149,109 @@ def read_plate(crop):
 #     return text
 
 
+
+def analyze_plate_color(crop):
+    if crop is None or crop.size == 0:
+        return {
+            "background_color": "Unknown",
+            "text_color": "Unknown",
+            "plate_type": "Unknown"
+        }
+
+    # Ignore the outer border
+    h, w = crop.shape[:2]
+
+    if h < 5 or w < 5:
+        return {
+            "background_color": "Unknown",
+            "text_color": "Unknown",
+            "plate_type": "Unknown"
+        }
+
+    inner = crop[
+        int(h * 0.15):int(h * 0.85),
+        int(w * 0.08):int(w * 0.92)
+    ]
+
+    hsv = cv2.cvtColor(inner, cv2.COLOR_BGR2HSV)
+    gray = cv2.cvtColor(inner, cv2.COLOR_BGR2GRAY)
+
+    hue = hsv[:, :, 0]
+    saturation = hsv[:, :, 1]
+    value = hsv[:, :, 2]
+
+    # Estimate background using bright, low-saturation pixels
+    white_mask = (
+        (saturation < 65) &
+        (value > 145)
+    )
+
+    yellow_mask = (
+        (hue >= 15) &
+        (hue <= 40) &
+        (saturation > 70) &
+        (value > 90)
+    )
+
+    green_mask = (
+        (hue >= 35) &
+        (hue <= 90) &
+        (saturation > 55) &
+        (value > 50)
+    )
+
+    black_mask = value < 75
+
+    total = max(value.size, 1)
+
+    white_ratio = np.count_nonzero(white_mask) / total
+    yellow_ratio = np.count_nonzero(yellow_mask) / total
+    green_ratio = np.count_nonzero(green_mask) / total
+    black_ratio = np.count_nonzero(black_mask) / total
+
+    # Choose the most likely background color
+    scores = {
+        "White": white_ratio,
+        "Yellow": yellow_ratio,
+        "Green": green_ratio,
+        "Black": black_ratio
+    }
+
+    background = max(scores, key=scores.get)
+
+    # Estimate character color
+    if background in ("White", "Yellow", "Green"):
+        text_color = (
+            "Black" if black_ratio > 0.05 else "Unknown"
+        )
+    elif background == "Black":
+        text_color = (
+            "Yellow" if yellow_ratio > 0.05 else "Unknown"
+        )
+    else:
+        text_color = "Unknown"
+
+    # Heuristic category, not legal verification
+    plate_type = "Unknown"
+
+    if background == "White" and text_color == "Black":
+        plate_type = "Likely private vehicle"
+
+    elif background == "Yellow" and text_color == "Black":
+        plate_type = "Likely commercial/transport"
+
+    elif background == "Green":
+        plate_type = "Possible electric vehicle category"
+
+    elif background == "Black" and text_color == "Yellow":
+        plate_type = "Possible special-use category"
+
+    return {
+        "background_color": background,
+        "text_color": text_color,
+        "plate_type": plate_type
+    }
+
 def save_record(plate, image_path, plate_path, confidence):
     with sqlite3.connect("plates.db") as conn:
         conn.execute(
@@ -202,6 +307,7 @@ def process_image(filepath):
 
             crop = image[y1:y2, x1:x2]
             plate_text = read_plate(crop)
+            plate_analysis = analyze_plate_color(crop)
 
             confidence = float(box.conf[0].item())
 
@@ -236,7 +342,10 @@ def process_image(filepath):
             detections.append({
                 "plate": plate_text,
                 "confidence": round(confidence, 3),
-                "plate_image": plate_filename
+                "plate_image": plate_filename,
+                "background_color": plate_analysis["background_color"],
+                "text_color": plate_analysis["text_color"],
+                "plate_type": plate_analysis["plate_type"]
             })
 
             if plate_text:

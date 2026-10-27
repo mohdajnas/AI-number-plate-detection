@@ -7,7 +7,7 @@
 [![EasyOCR](https://img.shields.io/badge/EasyOCR-Deep%20Learning-FF6F00?style=for-the-badge)](https://github.com/JaidedAI/EasyOCR)
 [![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
-An end-to-end, deep learning-powered **Automated Number Plate Recognition (ANPR)** web application. This system integrates a fine-tuned **YOLOv8** model for high-precision license plate localization, an advanced **OpenCV computer vision preprocessing pipeline** (CLAHE adaptive contrast enhancement, bicubic upscaling, edge noise cropping), and **EasyOCR** with regex-based Indian vehicle registration normalization.
+An end-to-end, deep learning-powered **Automated Number Plate Recognition (ANPR)** web application. This system integrates a fine-tuned **YOLOv8** model for high-precision license plate localization, an advanced **OpenCV computer vision preprocessing pipeline** (CLAHE adaptive contrast enhancement, bicubic upscaling, edge noise cropping), **EasyOCR** with regex-based Indian vehicle registration normalization, and an **HSV color segmentation engine** to classify plate background, text color, and heuristic vehicle registration categories.
 
 ---
 
@@ -22,7 +22,23 @@ Accurate plate boundary localization with confidence score and extracted alphanu
 
 ---
 
-### 2. Detection History & Audit Logging
+### 2. Plate Color & Category Analysis
+Each detected plate undergoes multi-channel HSV segmentation to determine plate background and character text colors, mapping them to standard vehicle registration categories (e.g., Private, Commercial, EV).
+
+<p align="center">
+  <img src="assets/plate_analysis_preview.png" alt="Plate Color and Category Analysis Cards" width="850px" style="border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);" />
+</p>
+
+| Number Plate | Plate Background | Plate Text Color | Estimated Plate Category | Confidence |
+| :--- | :---: | :---: | :--- | :---: |
+| `DL1CAB1234` | ⚪ White | ⚫ Black | **Likely private vehicle** | **94.6%** |
+| `DL12C5678` | 🟡 Yellow | ⚫ Black | **Likely commercial/transport** | **74.2%** |
+| `228412444` | ⚪ White | 🔘 Unknown | **Unknown** | **65.7%** |
+| `DL1OCD7890` | 🟢 Green | 🔘 Unknown | **Possible electric vehicle category** | **65.3%** |
+
+---
+
+### 3. Detection History & Audit Logging
 Every processed plate is saved with its cropped image reference, detection confidence, and UTC timestamp into an SQLite datastore.
 
 <p align="center">
@@ -31,7 +47,7 @@ Every processed plate is saved with its cropped image reference, detection confi
 
 ---
 
-### 3. Cropped License Plate Samples (`detected_plates/`)
+### 4. Cropped License Plate Samples (`detected_plates/`)
 The system extracts individual plate bounding boxes and applies custom OCR filtering to extract crisp, readable text even from varied lighting and angles.
 
 | Sample Plate Crop | Detected Text | Detection Confidence | Plate Type |
@@ -45,6 +61,15 @@ The system extracts individual plate bounding boxes and applies custom OCR filte
 ## ✨ Key Features
 
 - **⚡ Ultralytics YOLOv8 Detection**: Accurately detects number plates across challenging angles, vehicle types (cars, cabs, SUVs), and resolutions.
+- **🎨 Color Analysis & Registration Category Heuristics**:
+  - **HSV Color Segmentation**: Evaluates Hue, Saturation, and Value masks (White, Yellow, Green, Black) on the plate interior while trimming outer border noise.
+  - **Character Stroke Estimation**: Detects text stroke contrast against the primary background color.
+  - **Category Classification**:
+    - ⚪ White background + ⚫ Black text &rarr; **Likely private vehicle**
+    - 🟡 Yellow background + ⚫ Black text &rarr; **Likely commercial/transport**
+    - 🟢 Green background &rarr; **Possible electric vehicle category**
+    - ⚫ Black background + 🟡 Yellow text &rarr; **Possible special-use category**
+  - **Dynamic Visual Indicators**: Real-time color dots and classification badges on detection result cards.
 - **🔬 Advanced OpenCV Preprocessing**:
   - **Dynamic Margin Trimming**: Crops out plate borders (12% top, 10% bottom, 3% sides) to eliminate frame noise and rivet artifacts.
   - **3× Bicubic Upscaling**: Interpolates small or low-resolution crops to provide legible text strokes.
@@ -76,11 +101,19 @@ flowchart TD
         F --> G[3x Bicubic Upscaling]
         G --> H[CLAHE Adaptive Contrast]
     end
+
+    subgraph Color Analysis ["Color & Category Engine"]
+        D --> M[Border Margin Trimming]
+        M --> N[HSV Color Space Conversion]
+        N --> O[White / Yellow / Green / Black Color Masks]
+        O --> P[Plate Type & Color Heuristics]
+    end
     
     H --> I[EasyOCR Engine]
     I --> J[Post-Processing & Regex Normalization]
-    J -->|DL7CQ1939 / Confidence| K[SQLite Database Logging]
-    K --> L[Render Annotated Image & History Table]
+    J -->|Plate Text & Confidence| K[SQLite Database Logging]
+    P --> L[Render Detection Cards with Color Badges]
+    K --> L
 ```
 
 ---
@@ -89,7 +122,7 @@ flowchart TD
 
 ```text
 number-plate-detection/
-├── app.py                      # Core Flask web application & OCR inference logic
+├── app.py                      # Core Flask app, OCR inference & color classification
 ├── download_model.py           # Automated model weight downloader from Hugging Face
 ├── requirements.txt            # Python package dependencies
 ├── .env                        # Local environment configuration
@@ -98,6 +131,7 @@ number-plate-detection/
 │
 ├── assets/                     # Documentation media & screenshots
 │   ├── detection_preview.png   # Full detection view screenshot
+│   ├── plate_analysis_preview.png # Color & category detection result cards
 │   ├── history_preview.png     # History table screenshot
 │   └── plates/                 # Sample cropped plate showcases
 │
@@ -105,7 +139,7 @@ number-plate-detection/
 │   └── best.pt                 # YOLOv8 fine-tuned number plate weights (~6.2 MB)
 │
 ├── templates/
-│   └── index.html              # Responsive web UI template
+│   └── index.html              # Responsive web UI template with dynamic color badges
 │
 ├── uploads/                    # Temporary storage for uploaded vehicle images
 └── detected_plates/            # Saved plate crops generated during inference
@@ -177,6 +211,37 @@ results = reader.readtext(gray, detail=0, allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0
 
 # 6. Format Normalization (strips 'IND' and extracts standard pattern)
 match = re.search(r"([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4})", text)
+```
+
+---
+
+## 🎨 How the Plate Color & Category Analysis Works
+
+In `analyze_plate_color(crop)` in `app.py`, the system isolates the interior plate region and computes pixel coverage across HSV color thresholds:
+
+```python
+# 1. Focus on inner plate region (excluding outer mounting border)
+inner = crop[int(h * 0.15):int(h * 0.85), int(w * 0.08):int(w * 0.92)]
+hsv = cv2.cvtColor(inner, cv2.COLOR_BGR2HSV)
+
+# 2. HSV color masking for dominant background colors
+white_mask  = (saturation < 65) & (value > 145)
+yellow_mask = (hue >= 15) & (hue <= 40) & (saturation > 70) & (value > 90)
+green_mask  = (hue >= 35) & (hue <= 90) & (saturation > 55) & (value > 50)
+black_mask  = value < 75
+
+# 3. Determine dominant background and contrasting text color
+background = max(scores, key=scores.get)
+
+# 4. Heuristic vehicle registration classification
+if background == "White" and text_color == "Black":
+    plate_type = "Likely private vehicle"
+elif background == "Yellow" and text_color == "Black":
+    plate_type = "Likely commercial/transport"
+elif background == "Green":
+    plate_type = "Possible electric vehicle category"
+elif background == "Black" and text_color == "Yellow":
+    plate_type = "Possible special-use category"
 ```
 
 ---
