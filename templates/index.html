@@ -5,59 +5,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Number Plate Detection System</title>
+    <title>Number Plate Detection Dashboard</title>
 
     <style>
         * {
             box-sizing: border-box;
         }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f1f5f9;
-            margin: 0;
-            color: #1e293b;
+        :root {
+            --background: #f4f6fa;
+            --surface: #ffffff;
+            --primary: #2563eb;
+            --text: #172033;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #047857;
         }
 
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont,
+                "Segoe UI", Arial, sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        /* Header */
+
         header {
-            background: #0f172a;
+            background: #111827;
             color: white;
-            padding: 28px 20px;
+            padding: 22px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .brand p {
+            margin: 6px 0 0;
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #bbf7d0;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        /* Main layout */
+
+        main {
+            max-width: 1500px;
+            margin: auto;
+            padding: 28px;
+        }
+
+        .page-heading {
+            margin-bottom: 22px;
+        }
+
+        .page-heading h2 {
+            font-size: 26px;
+            margin: 0 0 8px;
+        }
+
+        .page-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .split-screen {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.5fr);
+            gap: 22px;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            min-width: 0;
+            box-shadow: 0 4px 16px #0f172a08;
+        }
+
+        .panel h3 {
+            font-size: 18px;
+            margin: 0 0 8px;
+        }
+
+        .description {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        /* Upload panel */
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 30px 16px;
             text-align: center;
         }
 
-        header h1 {
-            margin: 0 0 10px;
+        .upload-icon {
+            font-size: 38px;
+            margin-bottom: 10px;
         }
 
-        main {
-            max-width: 1000px;
-            margin: 30px auto;
-            padding: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 24px;
-            margin-bottom: 24px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px #00000010;
+        .upload-area p {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
         }
 
         input[type="file"] {
             display: block;
-            margin: 20px 0;
             width: 100%;
+            margin-top: 20px;
+            font-size: 13px;
         }
 
         button {
-            background: #2563eb;
+            border: 0;
+            border-radius: 8px;
+            background: var(--primary);
             color: white;
-            border: none;
-            padding: 13px 22px;
-            border-radius: 6px;
+            width: 100%;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 15px;
+            margin-top: 18px;
+            transition: background 0.2s;
         }
 
         button:hover {
@@ -69,116 +170,142 @@
             cursor: wait;
         }
 
+        .upload-tips {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 10px;
+            background: #eff6ff;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #1e40af;
+        }
+
+        /* Result panel */
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 20px;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .image-container {
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            min-height: 240px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
         .result-image {
+            display: block;
             width: 100%;
             height: auto;
-            border-radius: 8px;
-            margin-top: 12px;
+            max-height: 450px;
+            object-fit: contain;
+        }
+
+        .empty-state {
+            padding: 35px 20px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state .icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h4 {
+            color: var(--text);
+            margin: 0 0 8px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Recognized plate */
+
+        .plate-section {
+            margin-top: 24px;
+        }
+
+        .section-label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 10px;
         }
 
         .plate-number {
             display: inline-block;
-            background: #f8fafc;
-            border: 2px solid #334155;
-            border-radius: 8px;
             padding: 12px 18px;
+            background: #fff;
+            border: 2px solid #1e293b;
+            border-radius: 7px;
+            color: #111827;
+            font-family: monospace;
             font-size: 25px;
-            font-weight: bold;
+            font-weight: 700;
             letter-spacing: 2px;
-            color: #047857;
             overflow-wrap: anywhere;
         }
 
-        .result-grid {
+        /* Analysis cards */
+
+        .analysis-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit,
-                    minmax(200px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
             margin-top: 20px;
         }
 
-        .result-item {
+        .analysis-card {
             background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
             padding: 16px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            min-width: 0;
         }
 
-        .result-item .label {
+        .analysis-label {
             display: block;
-            font-size: 13px;
-            color: #64748b;
-            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 10px;
         }
 
-        .result-item .value {
-            font-size: 17px;
-            font-weight: bold;
+        .analysis-value {
+            font-size: 15px;
+            font-weight: 700;
             overflow-wrap: anywhere;
         }
 
         .color-dot {
             display: inline-block;
-            width: 15px;
-            height: 15px;
+            width: 13px;
+            height: 13px;
             border: 1px solid #94a3b8;
             border-radius: 50%;
-            margin-right: 8px;
             vertical-align: middle;
-        }
-
-        .error {
-            color: #dc2626;
-            background: #fef2f2;
-            padding: 12px;
-            border-radius: 6px;
-        }
-
-        .notice {
-            color: #92400e;
-            background: #fffbeb;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 600px;
-        }
-
-        th,
-        td {
-            padding: 13px;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: left;
-        }
-
-        th {
-            background: #f8fafc;
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        .color-dot {
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-            border: 1px solid #94a3b8;
-            border-radius: 50%;
-            margin-right: 8px;
-            vertical-align: middle;
+            margin-right: 7px;
         }
 
         .color-white {
@@ -201,15 +328,150 @@
             background-color: #cbd5e1;
         }
 
+        .confidence-track {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
 
-        @media (max-width: 600px) {
+        .confidence-fill {
+            height: 100%;
+            background: #16a34a;
+            border-radius: 10px;
+        }
+
+        .notice {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fffbeb;
+            color: #92400e;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* Error */
+
+        .error {
+            padding: 14px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #b91c1c;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        /* History */
+
+        .history-panel {
+            margin-top: 24px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .history-header h3 {
+            margin: 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 550px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        td:first-child {
+            font-family: monospace;
+            font-weight: 700;
+        }
+
+        .no-records {
+            color: var(--muted);
+            text-align: center;
+            padding: 28px;
+        }
+
+        footer {
+            padding: 24px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .confidence-track {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: #16a34a;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+
+        /* Responsive layout */
+
+        @media (max-width: 850px) {
             main {
-                padding: 12px;
-                margin: 15px auto;
+                padding: 18px;
             }
 
-            .card {
-                padding: 17px;
+            .split-screen {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 18px;
+            }
+
+            .brand h1 {
+                font-size: 18px;
+            }
+
+            .status {
+                display: none;
             }
 
             .plate-number {
@@ -222,157 +484,258 @@
 <body>
 
     <header>
-        <h1>Number Plate Detection System</h1>
-        <p>Automatic Number Plate Recognition and Color Analysis</p>
+        <div class="brand">
+            <h1>Number Plate Detection</h1>
+            <p>Vehicle Recognition &amp; Analysis Dashboard</p>
+        </div>
+
+        <div class="status">
+            <span class="status-dot"></span>
+            <span>Dashboard Ready</span>
+        </div>
     </header>
 
     <main>
 
-        <!-- Image Upload -->
-        <section class="card">
-            <h2>Upload Vehicle Image</h2>
+        <div class="page-heading">
+            <h2>Detection Dashboard</h2>
+            <p>Upload a vehicle image to identify and analyze its number plate.</p>
+        </div>
 
-            <p>
-                Upload a clear vehicle image to detect its number
-                plate and estimate its color and category.
-            </p>
-
-            <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                <input type="file" name="image" id="imageInput" accept=".jpg,.jpeg,.png,.webp" required>
-
-                <button type="submit" id="detectButton">
-                    Detect Number Plate
-                </button>
-            </form>
-
-            <p id="loadingMessage" hidden>
-                Processing image. Please wait...
-            </p>
-
-            {% if error %}
-            <p class="error">{{ error }}</p>
-            {% endif %}
-        </section>
-
-
-        <!-- Detection Results -->
-        {% if annotated_image %}
-        <section class="card">
-
-            <h2>Detection Result</h2>
-
-            <img class="result-image" src="{{ url_for(
-                'detected_file',
-                filename=annotated_image
-            ) }}" alt="Vehicle image with detected number plate">
-
-            {% if detections %}
-
-            {% for item in detections %}
-
-            <div style="margin-top: 28px;">
-
-                <h3>Recognized Number Plate</h3>
-
-                <div class="plate-number">
-                    {{ item.plate if item.plate else
-                    "Text not recognized" }}
-                </div>
-
-                <div class="result-grid">
-
-
-                    <!-- Background Color -->
-                    <div class="result-item">
-                        <span class="label">Plate Background Color</span>
-
-                        <span class="value">
-                            <span class="color-dot color-{{ item.background_color | lower
-                                if item.background_color in ['White', 'Yellow', 'Green', 'Black']
-                                else 'unknown' }}"></span>
-
-                            {{ item.background_color }}
-                        </span>
-                    </div>
-
-
-
-
-                    <!-- Text Color -->
-                    <div class="result-item">
-                        <span class="label">Plate Text Color</span>
-
-                        <span class="value">
-                            <span class="color-dot color-{{ item.text_color | lower
-                                if item.text_color in ['White', 'Yellow', 'Green', 'Black']
-                                else 'unknown' }}"></span>
-
-                            {{ item.text_color }}
-                        </span>
-                    </div>
-
-
-
-                    <!-- Plate Category -->
-                    <div class="result-item">
-                        <span class="label">
-                            Estimated Plate Category
-                        </span>
-
-                        <span class="value">
-                            {{ item.plate_type }}
-                        </span>
-                    </div>
-
-
-                    <!-- Detection Confidence -->
-                    <div class="result-item">
-                        <span class="label">
-                            Detection Confidence
-                        </span>
-
-                        <span class="value">
-                            {{ "%.1f"|format(
-                            item.confidence * 100
-                            ) }}%
-                        </span>
-                    </div>
-
-                </div>
-
-            </div>
-
-            {% endfor %}
-
-            {% else %}
-
-            <p>No number plates were detected.</p>
-
-            {% endif %}
-
-            <p class="notice">
-                Plate colors and categories are estimates based on
-                image analysis. They do not establish the vehicle's
-                legal registration or ownership category.
-            </p>
-
-        </section>
+        {% if error %}
+        <div class="error">{{ error }}</div>
         {% endif %}
 
+        <div class="split-screen">
 
-        <!-- Detection History -->
-        <section class="card">
+            <!-- LEFT PANEL: UPLOAD -->
 
-            <h2>Recent Detection History</h2>
+            <section class="panel">
+                <h3>Upload Vehicle Image</h3>
 
-            <div class="table-wrap">
+                <p class="description">
+                    Select a clear vehicle image. The system will
+                    detect the number plate and analyze its text and colors.
+                </p>
+
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+
+                    <div class="upload-area">
+                        <div class="upload-icon">📷</div>
+
+                        <strong>Select an image</strong>
+
+                        <p>
+                            Supported formats: JPG, JPEG, PNG, WEBP<br>
+                            Maximum file size: 10 MB
+                        </p>
+
+                        <input type="file" name="image" id="imageInput" accept=".jpg,.jpeg,.png,.webp" required>
+                    </div>
+
+                    <button type="submit" id="detectButton">
+                        Detect Number Plate
+                    </button>
+
+                    <p id="loadingMessage" class="description" hidden>
+                        Processing image. Please wait...
+                    </p>
+                </form>
+
+                <div class="upload-tips">
+                    <strong>For better results</strong><br>
+                    • Use a clear, high-resolution image.<br>
+                    • Keep the plate visible and unobstructed.<br>
+                    • Avoid excessive blur and glare.
+                </div>
+            </section>
+
+
+            <!-- RIGHT PANEL: RESULTS -->
+
+            <section class="panel">
+
+                <div class="result-header">
+                    <h3>Detection Results</h3>
+
+                    {% if annotated_image %}
+                    <span class="badge">PROCESSED</span>
+                    {% else %}
+                    <span class="badge">AWAITING IMAGE</span>
+                    {% endif %}
+                </div>
+
+                <p class="description">
+                    Detected plate and analysis results appear here.
+                </p>
+
+                <div class="image-container">
+
+                    {% if annotated_image %}
+
+                    <img class="result-image" src="{{ url_for(
+                            'detected_file',
+                            filename=annotated_image
+                        ) }}" alt="Image with detected number plate">
+
+                    {% else %}
+
+                    <div class="empty-state">
+                        <div class="icon">🚘</div>
+                        <h4>No detection yet</h4>
+                        <p>
+                            Upload an image using the panel on the left
+                            to view the detection result here.
+                        </p>
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                {% if annotated_image %}
+
+                {% if detections %}
+
+                {% for item in detections %}
+
+                <div class="plate-section">
+
+                    <span class="section-label">
+                        RECOGNIZED NUMBER PLATE
+                    </span>
+
+                    <div class="plate-number">
+                        {{ item.plate if item.plate
+                        else "Text not recognized" }}
+                    </div>
+
+                    <div class="analysis-grid">
+
+                        <!-- Background Color -->
+
+                        <div class="analysis-card">
+                            <span class="analysis-label">
+                                Background Color
+                            </span>
+
+                            <div class="analysis-value">
+
+                                <span class="color-dot color-{{
+                                        item.background_color | lower
+                                        if item.background_color in
+                                        ['White', 'Yellow', 'Green', 'Black']
+                                        else 'unknown'
+                                    }}"></span>
+
+                                {{ item.background_color }}
+                            </div>
+                        </div>
+
+
+                        <!-- Text Color -->
+
+                        <div class="analysis-card">
+                            <span class="analysis-label">
+                                Text Color
+                            </span>
+
+                            <div class="analysis-value">
+
+                                <span class="color-dot color-{{
+                                        item.text_color | lower
+                                        if item.text_color in
+                                        ['White', 'Yellow', 'Green', 'Black']
+                                        else 'unknown'
+                                    }}"></span>
+
+                                {{ item.text_color }}
+                            </div>
+                        </div>
+
+
+                        <!-- Plate Category -->
+
+                        <div class="analysis-card">
+                            <span class="analysis-label">
+                                Estimated Plate Category
+                            </span>
+
+                            <div class="analysis-value">
+                                {{ item.plate_type }}
+                            </div>
+                        </div>
+
+
+                        <!-- Confidence -->
+
+                        <div class="analysis-card">
+                            <span class="analysis-label">
+                                Detection Confidence
+                            </span>
+
+                            <div class="analysis-value">
+                                {{ "%.1f"|format(item.confidence * 100) }}%
+                            </div>
+
+
+
+
+                            <div class="confidence-track">
+                                <div class="confidence-fill" style="width: {{ (item.confidence * 100)|round(1) }}%;">
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+                {% else %}
+
+                <p class="notice">
+                    No number plates were detected in this image.
+                    Try a clearer vehicle image.
+                </p>
+
+                {% endif %}
+
+                <div class="notice">
+                    <strong>Note:</strong>
+                    Plate color and category are estimates.
+                    Detection confidence measures the plate detector's
+                    confidence, not the accuracy of text recognition
+                    or vehicle classification.
+                </div>
+
+                {% endif %}
+
+            </section>
+
+        </div>
+
+
+        <!-- DETECTION HISTORY -->
+
+        <section class="panel history-panel">
+
+            <div class="history-header">
+                <h3>Recent Detection History</h3>
+            </div>
+
+            <div class="table-container">
 
                 <table>
                     <thead>
                         <tr>
                             <th>Plate Number</th>
-                            <th>Detection Confidence</th>
-                            <th>Date and Time (UTC)</th>
+                            <th>Confidence</th>
+                            <th>Date &amp; Time (UTC)</th>
                         </tr>
                     </thead>
 
@@ -395,8 +758,8 @@
                         {% else %}
 
                         <tr>
-                            <td colspan="3">
-                                No detection records yet.
+                            <td colspan="3" class="no-records">
+                                No detection records available yet.
                             </td>
                         </tr>
 
@@ -412,26 +775,46 @@
     </main>
 
     <footer>
-        Number Plate Detection Platform
+        Number Plate Detection Platform &middot; AI-assisted vehicle analysis
     </footer>
 
     <script>
-        const form = document.getElementById("uploadForm");
-        const button = document.getElementById("detectButton");
-        const loading = document.getElementById("loadingMessage");
+        const uploadForm = document.getElementById("uploadForm");
+        const imageInput = document.getElementById("imageInput");
+        const detectButton = document.getElementById("detectButton");
+        const loadingMessage = document.getElementById("loadingMessage");
 
-        form.addEventListener("submit", function (event) {
-            const input = document.getElementById("imageInput");
+        uploadForm.addEventListener("submit", function (event) {
 
-            if (!input.files || input.files.length === 0) {
+            if (!imageInput.files || imageInput.files.length === 0) {
                 event.preventDefault();
-                alert("Please select a vehicle image.");
+                alert("Please select an image first.");
                 return;
             }
 
-            button.disabled = true;
-            button.textContent = "Detecting...";
-            loading.hidden = false;
+            const file = imageInput.files[0];
+
+            const allowedTypes = [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            ];
+
+            if (!allowedTypes.includes(file.type)) {
+                event.preventDefault();
+                alert("Please upload a JPG, PNG, or WEBP image.");
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                event.preventDefault();
+                alert("The image must be smaller than 10 MB.");
+                return;
+            }
+
+            detectButton.disabled = true;
+            detectButton.textContent = "Detecting...";
+            loadingMessage.hidden = false;
         });
     </script>
 
