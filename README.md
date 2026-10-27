@@ -1,4 +1,4 @@
-# 🚗 AI License & Number Plate Detection System (ANPR)
+# AI License & Number Plate Detection System (ANPR)
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
@@ -11,7 +11,7 @@ An end-to-end, deep learning-powered **Automated Number Plate Recognition (ANPR)
 
 ---
 
-## 📸 Visual Showcase
+## Visual Showcase
 
 ### 1. Real-Time Detection & Recognition
 Accurate plate boundary localization with confidence score and extracted alphanumeric decoding.
@@ -58,36 +58,27 @@ The system extracts individual plate bounding boxes and applies custom OCR filte
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 - **⚡ Ultralytics YOLOv8 Detection**: Accurately detects number plates across challenging angles, vehicle types (cars, cabs, SUVs), and resolutions.
-- **🎨 Color Analysis & Registration Category Heuristics**:
-  - **HSV Color Segmentation**: Evaluates Hue, Saturation, and Value masks (White, Yellow, Green, Black) on the plate interior while trimming outer border noise.
-  - **Character Stroke Estimation**: Detects text stroke contrast against the primary background color.
-  - **Category Classification**:
-    - ⚪ White background + ⚫ Black text &rarr; **Likely private vehicle**
-    - 🟡 Yellow background + ⚫ Black text &rarr; **Likely commercial/transport**
-    - 🟢 Green background &rarr; **Possible electric vehicle category**
-    - ⚫ Black background + 🟡 Yellow text &rarr; **Possible special-use category**
-  - **Dynamic Visual Indicators**: Real-time color dots and classification badges on detection result cards.
 - **🔬 Advanced OpenCV Preprocessing**:
   - **Dynamic Margin Trimming**: Crops out plate borders (12% top, 10% bottom, 3% sides) to eliminate frame noise and rivet artifacts.
   - **3× Bicubic Upscaling**: Interpolates small or low-resolution crops to provide legible text strokes.
   - **CLAHE (Contrast Limited Adaptive Histogram Equalization)**: Equalizes localized lighting variations to enhance character contrast.
-- **🇮🇳 Smart OCR Cleaning & Indian Plate Normalization**:
+- **Smart OCR Cleaning & Indian Plate Normalization**:
   - Whitelist enforcement for uppercase alphanumeric characters `[A-Z0-9]`.
   - Automatic removal of `IND` country identifier prefix artifacts.
   - Regular expression pattern matching (`[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}`) to eliminate stray symbols and characters.
-- **💾 SQLite Datastore**:
+- **SQLite Datastore**:
   - Persistent history log with timestamps, confidence scores, original images, and cropped plate assets.
-- **🌐 Clean & Lightweight Web UI**:
+- **Clean & Lightweight Web UI**:
   - Built with Flask and Vanilla HTML/CSS with instant feedback, file validation, and history inspection.
-- **🚀 Automated Model Fetching**:
+- **Automated Model Fetching**:
   - Built-in Hugging Face Hub integration that automatically downloads the YOLOv8 weights on first launch.
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TD
@@ -118,7 +109,7 @@ flowchart TD
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 number-plate-detection/
@@ -147,7 +138,7 @@ number-plate-detection/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Clone the Repository
 ```bash
@@ -188,7 +179,7 @@ http://127.0.0.1:5000
 
 ---
 
-## ⚙️ How the OCR Enhancement Works
+## How the OCR Enhancement Works
 
 In `app.py`, raw crops often have low resolution, poor lighting, or border artifacts that confuse standard OCR models. The custom `read_plate()` pipeline addresses this in four distinct steps:
 
@@ -246,7 +237,7 @@ elif background == "Black" and text_color == "Yellow":
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 The SQLite database (`plates.db`) manages detections using the following schema:
 
