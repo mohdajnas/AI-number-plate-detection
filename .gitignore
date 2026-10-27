@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+
+# Databases & local storage
+*.db
+*.sqlite
+*.sqlite3
+plates.db
+
+# Dynamic upload & output folders
+uploads/*
+!uploads/.gitkeep
+detected_plates/*
+!detected_plates/.gitkeep
+
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor / IDE settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Large ML model checkpoints (optional / un-comment if downloading separately)
+# *.pt
+# *.onnx
+# models/best.pt

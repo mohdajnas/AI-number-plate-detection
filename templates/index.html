@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Number Plate Detection</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            color: #1e293b;
+        }
+
+        header {
+            background: #0f172a;
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #00000010;
+        }
+
+        input[type="file"] {
+            margin: 18px 0;
+            width: 100%;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .plate {
+            font-size: 22px;
+            font-weight: bold;
+            color: #047857;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Number Plate Detection System</h1>
+        <p>Automatic Vehicle Number Plate Recognition</p>
+    </header>
+
+    <main>
+
+        <section class="card">
+            <h2>Upload Vehicle Image</h2>
+
+            <form method="POST" enctype="multipart/form-data">
+
+                <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required>
+
+                <br>
+
+                <button type="submit">
+                    Detect Number Plate
+                </button>
+
+            </form>
+
+            {% if error %}
+            <p class="error">{{ error }}</p>
+            {% endif %}
+        </section>
+
+
+        {% if annotated_image %}
+        <section class="card">
+            <h2>Detection Result</h2>
+
+            <img src="{{ url_for(
+                'detected_file',
+                filename=annotated_image
+            ) }}" alt="Vehicle with detected number plates">
+
+            <h3>Recognized Number Plates</h3>
+
+            {% if detections %}
+            {% for item in detections %}
+            <p class="plate">
+                {{ item.plate if item.plate
+                else "Text not recognized" }}
+            </p>
+
+            <p>
+                Detection confidence:
+                {{ "%.1f"|format(
+                item.confidence * 100
+                ) }}%
+            </p>
+            {% endfor %}
+            {% else %}
+            <p>No number plates detected.</p>
+            {% endif %}
+        </section>
+        {% endif %}
+
+
+        <section class="card">
+            <h2>Recent Detection History</h2>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Plate Number</th>
+                            <th>Confidence</th>
+                            <th>Detection Time (UTC)</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for row in history %}
+                        <tr>
+                            <td>{{ row.plate_number }}</td>
+
+                            <td>
+                                {{ "%.1f"|format(
+                                row.confidence * 100
+                                ) }}%
+                            </td>
+
+                            <td>{{ row.detected_at }}</td>
+                        </tr>
+
+                        {% else %}
+                        <tr>
+                            <td colspan="3">
+                                No detection records yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+
+</html>
