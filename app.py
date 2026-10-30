@@ -431,7 +431,7 @@ def detected_file(filename):
         DETECTED_FOLDER,
         filename
     )
-
+#kfnkelnfkrgk jtg vj  rljrjrh
 
 if __name__ == "__main__":
     init_db()
